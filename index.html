@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SneakySchool - Stealth Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #333;
+            background-color: #000;
+        }
+        
+        #gameInfo {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        #controls {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SneakySchool</h1>
+    <p>Sneak through the school at night and avoid being seen by the teacher!</p>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="gameInfo">
+        <div>Level: <span id="levelNumber">1</span></div>
+        <div>Status: <span id="gameStatus">Ready</span></div>
+    </div>
+    
+    <div id="controls">
+        Use WASD or Arrow Keys to move | R to restart level | N for next level (debug)
+    </div>
+    
+    <script src="js/game.js"></script>
+</body>
+</html>
