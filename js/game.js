@@ -98,6 +98,8 @@ class SneakySchoolGame {
             this.initializeLevel();
         } catch (error) {
             console.error('Error loading level:', error);
+            console.error('This might be due to CORS restrictions when opening the file directly in the browser.');
+            console.error('Try running a local server: python -m http.server 8000');
             
             // If we're trying to load a level beyond what exists, treat as game complete
             if (levelNumber > 7) {
