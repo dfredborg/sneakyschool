@@ -1,5 +1,5 @@
 {
-    "name": "Level 2 - The Hallway",
+    "name": "Niveau 2 - Korridoren",
     "width": 25,
     "height": 18,
     "player": {
@@ -24,17 +24,19 @@
         "startY": 8,
         "path": [
             {"x": 5, "y": 8, "wait": 800},
-            {"x": 11, "y": 8, "wait": 800},
-            {"x": 11, "y": 12, "wait": 1200},
+            {"x": 10, "y": 8, "wait": 800},
+            {"x": 10, "y": 12, "wait": 800},
+            {"x": 14, "y": 12, "wait": 800},
             {"x": 17, "y": 12, "wait": 800},
             {"x": 17, "y": 8, "wait": 800},
             {"x": 22, "y": 8, "wait": 1200},
             {"x": 17, "y": 8, "wait": 800},
             {"x": 17, "y": 4, "wait": 800},
-            {"x": 11, "y": 4, "wait": 800},
+            {"x": 14, "y": 4, "wait": 800},
+            {"x": 10, "y": 4, "wait": 800},
             {"x": 5, "y": 4, "wait": 800}
         ],
-        "speed": 0.015,
+        "speed": 1.2,
         "viewDistance": 5
     }
 }

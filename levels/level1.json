@@ -1,33 +1,104 @@
 {
-    "name": "Level 1 - Tutorial",
-    "width": 25,
-    "height": 18,
-    "player": {
-        "x": 1,
-        "y": 1
+  "name": "Niveau 1 - Øvelse",
+  "width": 25,
+  "height": 18,
+  "player": {
+    "x": 1,
+    "y": 1
+  },
+  "goal": {
+    "x": 23,
+    "y": 16
+  },
+  "obstacles": [
+    {
+      "x": 18,
+      "y": 2,
+      "width": 2,
+      "height": 8
     },
-    "goal": {
-        "x": 23,
-        "y": 16
+    {
+      "x": 5,
+      "y": 3,
+      "width": 2,
+      "height": 4
     },
-    "obstacles": [
-        {"x": 5, "y": 3, "width": 2, "height": 4},
-        {"x": 10, "y": 8, "width": 3, "height": 2},
-        {"x": 15, "y": 5, "width": 1, "height": 6},
-        {"x": 8, "y": 12, "width": 4, "height": 2},
-        {"x": 18, "y": 2, "width": 2, "height": 8},
-        {"x": 3, "y": 15, "width": 6, "height": 1}
-    ],
-    "teacher": {
-        "startX": 8,
-        "startY": 2,
-        "path": [
-            {"x": 8, "y": 2, "wait": 1000},
-            {"x": 12, "y": 2, "wait": 500},
-            {"x": 12, "y": 6, "wait": 1000},
-            {"x": 8, "y": 6, "wait": 500}
-        ],
-        "speed": 0.02,
-        "viewDistance": 4
+    {
+      "x": 15,
+      "y": 5,
+      "width": 1,
+      "height": 6
+    },
+    {
+      "x": 10,
+      "y": 8,
+      "width": 3,
+      "height": 2
+    },
+    {
+      "x": 8,
+      "y": 12,
+      "width": 4,
+      "height": 2
+    },
+    {
+      "x": 3,
+      "y": 15,
+      "width": 6,
+      "height": 1
     }
+  ],
+  "teacher": {
+    "startX": 8,
+    "startY": 2,
+    "path": [
+      {
+        "x": 8,
+        "y": 2,
+        "wait": 1000
+      },
+      {
+        "x": 12,
+        "y": 2,
+        "wait": 500
+      },
+      {
+        "x": 12,
+        "y": 6,
+        "wait": 1000
+      },
+      {
+        "x": 8,
+        "y": 6,
+        "wait": 500
+      },
+      {
+        "x": 8,
+        "y": 11,
+        "wait": 1000
+      },
+      {
+        "x": 14,
+        "y": 12,
+        "wait": 1000
+      },
+      {
+        "x": 20,
+        "y": 12,
+        "wait": 1000
+      },
+      {
+        "x": 23,
+        "y": 3,
+        "wait": 1000
+      },
+      {
+        "x": 10,
+        "y": 15,
+        "wait": 1000
+      }
+    ],
+    "speed": 1,
+    "viewDistance": 4
+  }
 }

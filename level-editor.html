@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SneakySchool Niveau Editor</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .toolbar {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-right: 20px;
+        }
+        
+        .tool-group label {
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        button:not(.active) {
+            background-color: #666;
+            color: white;
+        }
+        
+        button:hover {
+            opacity: 0.8;
+        }
+        
+        input, select {
+            padding: 5px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background-color: #444;
+            color: white;
+        }
+        
+        #levelCanvas {
+            border: 2px solid #333;
+            background-color: #000;
+            cursor: crosshair;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            height: fit-content;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #444;
+            border-radius: 8px;
+        }
+        
+        .section h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .path-point {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            align-items: center;
+        }
+        
+        .path-point input {
+            width: 60px;
+        }
+        
+        .path-point button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background-color: #f44336;
+        }
+        
+        #pathList {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #444;
+            border-radius: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #666;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .export-area {
+            margin-top: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #222;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="toolbar">
+            <div class="tool-group">
+                <label>Tegneværktøjer</label>
+                <button id="toolWall" class="active" onclick="setTool('wall')">Væg</button>
+                <button id="toolPlayer" onclick="setTool('player')">Spiller</button>
+                <button id="toolGoal" onclick="setTool('goal')">Mål</button>
+                <button id="toolTeacher" onclick="setTool('teacher')">Lærer</button>
+                <button id="toolPath" onclick="setTool('path')">Rute Punkt</button>
+                <button id="toolErase" onclick="setTool('erase')">Slet</button>
+            </div>
+            
+            <div class="tool-group">
+                <label>Niveau Størrelse</label>
+                <input type="number" id="levelWidth" value="25" min="10" max="50" onchange="resizeLevel()">
+                <label>×</label>
+                <input type="number" id="levelHeight" value="18" min="10" max="40" onchange="resizeLevel()">
+            </div>
+            
+            <div class="tool-group">
+                <label>Grid Size</label>
+                <input type="number" id="gridSize" value="20" min="10" max="40" onchange="resizeCanvas()">
+            </div>
+            
+            <div class="tool-group">
+                <label>Actions</label>
+                <button onclick="clearLevel()">Clear All</button>
+                <button onclick="addBorders()">Add Borders</button>
+            </div>
+        </div>
+        
+        <canvas id="levelCanvas" width="500" height="360"></canvas>
+    </div>
+    
+    <div class="sidebar">
+        <div class="file-actions">
+            <button onclick="loadLevel()">Load Level</button>
+            <button onclick="saveLevel()">Save Level</button>
+            <button onclick="exportLevel()">Export JSON</button>
+        </div>
+        
+        <div class="section">
+            <h3>Level Properties</h3>
+            <div class="form-group">
+                <label>Level Name:</label>
+                <input type="text" id="levelName" value="New Level" onchange="updateLevelName()">
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>Teacher Properties</h3>
+            <div class="form-group">
+                <label>Speed:</label>
+                <input type="number" id="teacherSpeed" value="1.0" step="0.1" min="0.1" max="5.0" onchange="updateTeacherProperties()">
+            </div>
+            <div class="form-group">
+                <label>View Distance:</label>
+                <input type="number" id="teacherViewDistance" value="4" min="1" max="15" onchange="updateTeacherProperties()">
+            </div>
+            <div class="form-group">
+                <label>Path Points:</label>
+                <div id="pathList"></div>
+                <button onclick="clearPath()">Clear Path</button>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #795548;"></div>
+                <span>Walls/Obstacles</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50;"></div>
+                <span>Player Start</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FF9800;"></div>
+                <span>Goal/Exit</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F44336;"></div>
+                <span>Teacher Start</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #E91E63;"></div>
+                <span>Path Points</span>
+            </div>
+        </div>
+        
+        <div class="export-area">
+            <h3>JSON Export</h3>
+            <textarea id="jsonOutput" readonly placeholder="Click 'Export JSON' to generate level data..."></textarea>
+            <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileLoad(event)">
+    </div>
+    
+    <script src="js/level-editor.js"></script>
+</body>
+</html>

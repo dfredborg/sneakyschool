@@ -16,10 +16,21 @@ class SneakySchoolGame {
         this.gridHeight = Math.floor(this.height / this.gridSize);
         
         // Game objects
-        this.player = new Player(1, 1, this.gridSize);
+        this.player = new Player(1, 1, this.gridSize, this);
         this.teacher = null;
         this.obstacles = [];
         this.goal = null;
+        
+        // Assets
+        this.backgroundImage = new Image();
+        this.backgroundLoaded = false;
+        this.teacherImage = new Image();
+        this.teacherImageLoaded = false;
+        this.playerImage = new Image();
+        this.playerImageLoaded = false;
+        this.exitImage = new Image();
+        this.exitImageLoaded = false;
+        this.loadAssets();
         
         // Input handling
         this.keys = {};
@@ -53,24 +64,59 @@ class SneakySchoolGame {
         });
     }
     
+    loadAssets() {
+        this.backgroundImage.onload = () => {
+            this.backgroundLoaded = true;
+        };
+        this.backgroundImage.src = 'assest/background.png';
+        
+        this.teacherImage.onload = () => {
+            this.teacherImageLoaded = true;
+        };
+        this.teacherImage.src = 'assest/teacher.png';
+        
+        this.playerImage.onload = () => {
+            this.playerImageLoaded = true;
+        };
+        this.playerImage.src = 'assest/player.png';
+        
+        this.exitImage.onload = () => {
+            this.exitImageLoaded = true;
+        };
+        this.exitImage.src = 'assest/exit.png';
+    }
+    
     async loadLevel(levelNumber) {
         try {
+            console.log(`Attempting to load level ${levelNumber}`);
             const response = await fetch(`levels/level${levelNumber}.json`);
             if (!response.ok) {
-                throw new Error(`Level ${levelNumber} not found`);
+                throw new Error(`Level ${levelNumber} not found (HTTP ${response.status})`);
             }
             this.levelData = await response.json();
+            console.log(`Successfully loaded level ${levelNumber}: ${this.levelData.name}`);
             this.initializeLevel();
         } catch (error) {
             console.error('Error loading level:', error);
-            // Create a default level if loading fails
+            
+            // If we're trying to load a level beyond what exists, treat as game complete
+            if (levelNumber > 7) {
+                console.log('No more levels available - game complete');
+                this.gameState = 'gameComplete';
+                this.currentLevel = 7; // Stay on last level
+                this.updateUI();
+                return;
+            }
+            
+            // For other errors, create a default level
+            console.log('Creating default level due to error');
             this.createDefaultLevel();
         }
     }
     
     createDefaultLevel() {
         this.levelData = {
-            name: "Default Level",
+            name: "Standard Niveau",
             width: this.gridWidth,
             height: this.gridHeight,
             player: { x: 1, y: 1 },
@@ -84,12 +130,12 @@ class SneakySchoolGame {
                 startX: 8,
                 startY: 2,
                 path: [
-                    { x: 8, y: 2, wait: 60 },
-                    { x: 12, y: 2, wait: 30 },
-                    { x: 12, y: 6, wait: 60 },
-                    { x: 8, y: 6, wait: 30 }
+                    { x: 8, y: 2, wait: 2000 },
+                    { x: 12, y: 2, wait: 1000 },
+                    { x: 12, y: 6, wait: 2000 },
+                    { x: 8, y: 6, wait: 1000 }
                 ],
-                speed: 0.02,
+                speed: 1.0,
                 viewDistance: 4
             }
         };
@@ -108,7 +154,8 @@ class SneakySchoolGame {
             teacherData.path,
             teacherData.speed || 0.02,
             teacherData.viewDistance || 4,
-            this.gridSize
+            this.gridSize,
+            this
         );
         
         // Initialize obstacles
@@ -117,7 +164,7 @@ class SneakySchoolGame {
         );
         
         // Initialize goal
-        this.goal = new Goal(this.levelData.goal.x, this.levelData.goal.y, this.gridSize);
+        this.goal = new Goal(this.levelData.goal.x, this.levelData.goal.y, this.gridSize, this);
         
         this.gameState = 'playing';
         this.updateUI();
@@ -153,12 +200,18 @@ class SneakySchoolGame {
     }
     
     render() {
-        // Clear canvas
-        this.ctx.fillStyle = '#2a2a2a';
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        // Clear canvas and draw background
+        if (this.backgroundLoaded) {
+            // Draw the background image, scaled to fit the canvas
+            this.ctx.drawImage(this.backgroundImage, 0, 0, this.width, this.height);
+        } else {
+            // Fallback to solid color background if image isn't loaded yet
+            this.ctx.fillStyle = '#2a2a2a';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+        }
         
         // Draw grid (optional, for debugging)
-        this.drawGrid();
+        // this.drawGrid();
         
         // Draw obstacles
         this.obstacles.forEach(obstacle => obstacle.render(this.ctx));
@@ -210,32 +263,56 @@ class SneakySchoolGame {
         this.ctx.textAlign = 'center';
         
         if (this.gameState === 'gameOver') {
-            this.ctx.fillText('CAUGHT!', this.width / 2, this.height / 2);
+            this.ctx.fillText('FANGET!', this.width / 2, this.height / 2);
             this.ctx.font = '24px Arial';
-            this.ctx.fillText('Press R to restart', this.width / 2, this.height / 2 + 50);
+            this.ctx.fillText('Tryk R for at genstarte', this.width / 2, this.height / 2 + 50);
         } else if (this.gameState === 'levelComplete') {
-            this.ctx.fillText('LEVEL COMPLETE!', this.width / 2, this.height / 2);
+            this.ctx.fillText('NIVEAU GENNEMFØRT!', this.width / 2, this.height / 2);
             this.ctx.font = '24px Arial';
-            this.ctx.fillText('Press N for next level', this.width / 2, this.height / 2 + 50);
+            this.ctx.fillText('Tryk N til næste niveau', this.width / 2, this.height / 2 + 50);
+        } else if (this.gameState === 'gameComplete') {
+            this.ctx.fillText('TILLYKKE!', this.width / 2, this.height / 2 - 40);
+            this.ctx.font = '32px Arial';
+            this.ctx.fillText('Du har gennemført spillet', this.width / 2, this.height / 2);
+            this.ctx.fillText('og undsluppet skolen!', this.width / 2, this.height / 2 + 40);
+            this.ctx.font = '24px Arial';
+            this.ctx.fillText('Vil du spille igen?', this.width / 2, this.height / 2 + 80);
+            this.ctx.fillText('Tryk R for at starte forfra fra Niveau 1', this.width / 2, this.height / 2 + 110);
         }
     }
     
     updateUI() {
         document.getElementById('levelNumber').textContent = this.currentLevel;
         
-        let status = 'Playing';
-        if (this.gameState === 'gameOver') status = 'Caught!';
-        else if (this.gameState === 'levelComplete') status = 'Level Complete!';
+        let status = 'Spiller';
+        if (this.gameState === 'gameOver') status = 'Fanget!';
+        else if (this.gameState === 'levelComplete') status = 'Niveau Gennemført!';
+        else if (this.gameState === 'gameComplete') status = 'Undsluppet! Spil Igen?';
         
         document.getElementById('gameStatus').textContent = status;
     }
     
     restartLevel() {
-        this.initializeLevel();
+        if (this.gameState === 'gameComplete') {
+            // If game is complete, restart from level 1
+            this.currentLevel = 1;
+            this.gameState = 'playing';
+            this.loadLevel(this.currentLevel);
+        } else {
+            // Otherwise just restart current level
+            this.initializeLevel();
+        }
     }
     
     nextLevel() {
         this.currentLevel++;
+        // Check if this is beyond our available levels
+        if (this.currentLevel > 7) {
+            // Show completion message or reset to level 1
+            this.gameState = 'gameComplete';
+            this.updateUI();
+            return;
+        }
         this.loadLevel(this.currentLevel);
     }
     
@@ -256,16 +333,18 @@ class SneakySchoolGame {
 
 // Player class
 class Player {
-    constructor(gridX, gridY, gridSize) {
+    constructor(gridX, gridY, gridSize, game) {
         this.gridX = gridX;
         this.gridY = gridY;
         this.gridSize = gridSize;
         this.x = gridX * gridSize;
         this.y = gridY * gridSize;
-        this.speed = 0.1; // Grid units per millisecond
+        this.speed = 2.5; // Smooth movement speed
         this.moving = false;
         this.targetX = this.x;
         this.targetY = this.y;
+        this.direction = 2; // 0: right, 1: down, 2: left, 3: up (starting with left since image faces left)
+        this.game = game;
     }
     
     setPosition(gridX, gridY) {
@@ -280,33 +359,42 @@ class Player {
     
     update(keys, deltaTime, obstacles, gridWidth, gridHeight) {
         if (this.moving) {
-            // Continue moving to target
+            // Continue moving to target with smooth interpolation (same as teacher)
             const dx = this.targetX - this.x;
             const dy = this.targetY - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < 1) {
-                // Reached target
+                // Reached target - snap to exact position
                 this.x = this.targetX;
                 this.y = this.targetY;
-                this.gridX = Math.round(this.x / this.gridSize);
-                this.gridY = Math.round(this.y / this.gridSize);
+                this.gridX = this.targetX / this.gridSize;
+                this.gridY = this.targetY / this.gridSize;
                 this.moving = false;
             } else {
-                // Move towards target
-                const moveDistance = this.speed * deltaTime;
-                this.x += (dx / distance) * moveDistance;
-                this.y += (dy / distance) * moveDistance;
+                // Smooth movement towards target (using same formula as teacher)
+                const moveSpeed = (this.speed * this.gridSize * deltaTime) / 1000;
+                this.x += (dx / distance) * moveSpeed;
+                this.y += (dy / distance) * moveSpeed;
             }
         } else {
             // Check for input to start new movement
             let newGridX = this.gridX;
             let newGridY = this.gridY;
             
-            if (keys['w'] || keys['arrowup']) newGridY--;
-            else if (keys['s'] || keys['arrowdown']) newGridY++;
-            else if (keys['a'] || keys['arrowleft']) newGridX--;
-            else if (keys['d'] || keys['arrowright']) newGridX++;
+            if (keys['w'] || keys['arrowup']) {
+                newGridY--;
+                this.direction = 3; // up
+            } else if (keys['s'] || keys['arrowdown']) {
+                newGridY++;
+                this.direction = 1; // down
+            } else if (keys['a'] || keys['arrowleft']) {
+                newGridX--;
+                this.direction = 2; // left
+            } else if (keys['d'] || keys['arrowright']) {
+                newGridX++;
+                this.direction = 0; // right
+            }
             
             // Check if movement is valid
             if (newGridX !== this.gridX || newGridY !== this.gridY) {
@@ -337,21 +425,51 @@ class Player {
     }
     
     render(ctx) {
-        ctx.fillStyle = '#4CAF50';
-        ctx.fillRect(this.x + 2, this.y + 2, this.gridSize - 4, this.gridSize - 4);
+        const centerX = this.x + this.gridSize / 2;
+        const centerY = this.y + this.gridSize / 2;
         
-        // Draw direction indicator
-        ctx.fillStyle = '#2E7D32';
-        ctx.fillRect(this.x + this.gridSize/2 - 2, this.y + 2, 4, 8);
+        if (this.game.playerImageLoaded && this.game.playerImage) {
+            // Save the current context state
+            ctx.save();
+            
+            // Translate to the center of the player
+            ctx.translate(centerX, centerY);
+            
+            // Handle direction-specific transformations
+            if (this.direction === 0) { // right - flip horizontally
+                ctx.scale(-1, 1); // Flip horizontally
+            } else if (this.direction === 1) { // down
+                ctx.rotate(-Math.PI / 2); // Rotate -90°
+            } else if (this.direction === 2) { // left - original orientation
+                // No transformation needed
+            } else if (this.direction === 3) { // up
+                ctx.rotate(Math.PI / 2); // Rotate 90°
+            }
+            
+            // Draw the player image centered and double size
+            const imageSize = (this.gridSize - 4) * 2; // Double the size
+            ctx.drawImage(this.game.playerImage, -imageSize/2, -imageSize/2, imageSize, imageSize);
+            
+            // Restore the context state
+            ctx.restore();
+        } else {
+            // Fallback to rectangle rendering if image isn't loaded
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(this.x + 2, this.y + 2, this.gridSize - 4, this.gridSize - 4);
+            
+            // Draw direction indicator
+            ctx.fillStyle = '#2E7D32';
+            ctx.fillRect(this.x + this.gridSize/2 - 2, this.y + 2, 4, 8);
+        }
     }
 }
 
 // Teacher class
 class Teacher {
-    constructor(startX, startY, path, speed, viewDistance, gridSize) {
+    constructor(startX, startY, path, speed, viewDistance, gridSize, game) {
         this.gridSize = gridSize;
         this.path = path;
-        this.speed = speed;
+        this.speed = speed || 1.0; // Default to 1 grid unit per second
         this.viewDistance = viewDistance;
         this.currentPathIndex = 0;
         this.x = startX * gridSize;
@@ -360,7 +478,8 @@ class Teacher {
         this.targetY = this.y;
         this.waitTime = 0;
         this.moving = false;
-        this.direction = 0; // 0: right, 1: down, 2: left, 3: up
+        this.direction = 1; // 0: right, 1: down, 2: left, 3: up (starting with down since image faces down)
+        this.game = game;
         
         this.setNextTarget();
     }
@@ -393,16 +512,16 @@ class Teacher {
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance < 1) {
-            // Reached target
+            // Reached target - snap to exact position
             this.x = this.targetX;
             this.y = this.targetY;
             this.currentPathIndex = (this.currentPathIndex + 1) % this.path.length;
             this.setNextTarget();
         } else {
-            // Move towards target
-            const moveDistance = this.speed * deltaTime;
-            this.x += (dx / distance) * moveDistance;
-            this.y += (dy / distance) * moveDistance;
+            // Smooth movement towards target
+            const moveSpeed = (this.speed * this.gridSize * deltaTime) / 1000;
+            this.x += (dx / distance) * moveSpeed;
+            this.y += (dy / distance) * moveSpeed;
         }
     }
     
@@ -467,33 +586,54 @@ class Teacher {
     }
     
     render(ctx) {
-        ctx.fillStyle = '#F44336';
-        ctx.fillRect(this.x + 2, this.y + 2, this.gridSize - 4, this.gridSize - 4);
-        
-        // Draw direction indicator
-        ctx.fillStyle = '#D32F2F';
         const centerX = this.x + this.gridSize / 2;
         const centerY = this.y + this.gridSize / 2;
         
-        ctx.beginPath();
-        if (this.direction === 0) { // right
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX + 10, centerY - 5);
-            ctx.lineTo(centerX + 10, centerY + 5);
-        } else if (this.direction === 1) { // down
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX - 5, centerY + 10);
-            ctx.lineTo(centerX + 5, centerY + 10);
-        } else if (this.direction === 2) { // left
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX - 10, centerY - 5);
-            ctx.lineTo(centerX - 10, centerY + 5);
-        } else { // up
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX - 5, centerY - 10);
-            ctx.lineTo(centerX + 5, centerY - 10);
+        if (this.game.teacherImageLoaded && this.game.teacherImage) {
+            // Save the current context state
+            ctx.save();
+            
+            // Translate to the center of the teacher
+            ctx.translate(centerX, centerY);
+            
+            // Rotate based on direction (image faces down by default, which is direction 1)
+            // 0: right = -90°, 1: down = 0°, 2: left = 90°, 3: up = 180°
+            const rotationAngle = (this.direction - 1) * Math.PI / 2;
+            ctx.rotate(rotationAngle);
+            
+            // Draw the teacher image centered and larger
+            const imageSize = (this.gridSize - 4) * 2; // Double the size
+            ctx.drawImage(this.game.teacherImage, -imageSize/2, -imageSize/2, imageSize, imageSize);
+            
+            // Restore the context state
+            ctx.restore();
+        } else {
+            // Fallback to rectangle rendering if image isn't loaded
+            ctx.fillStyle = '#F44336';
+            ctx.fillRect(this.x + 2, this.y + 2, this.gridSize - 4, this.gridSize - 4);
+            
+            // Draw direction indicator
+            ctx.fillStyle = '#D32F2F';
+            ctx.beginPath();
+            if (this.direction === 0) { // right
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + 10, centerY - 5);
+                ctx.lineTo(centerX + 10, centerY + 5);
+            } else if (this.direction === 1) { // down
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX - 5, centerY + 10);
+                ctx.lineTo(centerX + 5, centerY + 10);
+            } else if (this.direction === 2) { // left
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX - 10, centerY - 5);
+                ctx.lineTo(centerX - 10, centerY + 5);
+            } else { // up
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX - 5, centerY - 10);
+                ctx.lineTo(centerX + 5, centerY - 10);
+            }
+            ctx.fill();
         }
-        ctx.fill();
     }
     
     renderVision(ctx, obstacles) {
@@ -548,23 +688,31 @@ class Obstacle {
 
 // Goal class
 class Goal {
-    constructor(gridX, gridY, gridSize) {
+    constructor(gridX, gridY, gridSize, game) {
         this.gridX = gridX;
         this.gridY = gridY;
         this.gridSize = gridSize;
         this.x = gridX * gridSize;
         this.y = gridY * gridSize;
+        this.game = game;
     }
     
     render(ctx) {
-        ctx.fillStyle = '#FF9800';
-        ctx.fillRect(this.x + 4, this.y + 4, this.gridSize - 8, this.gridSize - 8);
-        
-        // Draw exit symbol
-        ctx.fillStyle = '#E65100';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('EXIT', this.x + this.gridSize / 2, this.y + this.gridSize / 2 + 5);
+        if (this.game.exitImageLoaded && this.game.exitImage) {
+            // Draw the exit image
+            const imageSize = this.gridSize - 4;
+            ctx.drawImage(this.game.exitImage, this.x + 2, this.y + 2, imageSize, imageSize);
+        } else {
+            // Fallback to original rendering if image isn't loaded
+            ctx.fillStyle = '#FF9800';
+            ctx.fillRect(this.x + 4, this.y + 4, this.gridSize - 8, this.gridSize - 8);
+            
+            // Draw exit symbol
+            ctx.fillStyle = '#E65100';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('UDGANG', this.x + this.gridSize / 2, this.y + this.gridSize / 2 + 5);
+        }
     }
 }
 
